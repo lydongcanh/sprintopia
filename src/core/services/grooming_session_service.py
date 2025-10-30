@@ -27,3 +27,6 @@ class GroomingSessionService:
             name=session.name,
             real_time_channel_name=real_time_channel_name,
         )
+    
+    async def get_grooming_session_by_id_async(self, session_id: uuid.UUID) -> GroomingSession | None:
+        return await self.repository.get_grooming_session_by_id_async(session_id)
