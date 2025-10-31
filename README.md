@@ -7,3 +7,7 @@ The joyful home for agile discussions and estimation.
 ```bash
 fastapi dev src/service_host/main.py
 ```
+
+## Related Projects
+
+- [Sprintopia Frontend](https://github.com/lydongcanh/sprintopia-ui)
