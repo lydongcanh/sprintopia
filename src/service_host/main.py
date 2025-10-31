@@ -4,10 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from uuid import UUID
 
 from core.infrastructure.database.database_client import DatabaseClient
+from core.infrastructure.supabase.supabase_facade import SupabaseFacade
 from core.infrastructure.repositories.grooming_session_repository import GroomingSessionRepository
+from core.infrastructure.repositories.user_repository import UserRepository
 
 from core.models.grooming_session import GroomingSession, CreateGroomingSessionRequest
+from core.models.user import User, CreateUserRequest
+
 from core.services.grooming_session_service import GroomingSessionService
+from core.services.user_service import UserService
 
 
 # Setup
@@ -29,8 +34,11 @@ app.add_middleware(
 )
 
 db_client = DatabaseClient()
+supabase_facade = SupabaseFacade()
 grooming_session_repository = GroomingSessionRepository(db_client)
-grooming_session_service = GroomingSessionService(grooming_session_repository)
+user_repository = UserRepository(db_client)
+grooming_session_service = GroomingSessionService(grooming_session_repository, supabase_facade)
+user_service = UserService(user_repository)
 
 
 # Sessions
@@ -41,3 +49,9 @@ async def create_grooming_session_async(session_data: CreateGroomingSessionReque
 @app.get(f"{api_prefix}/grooming-sessions/{{session_id}}")
 async def get_grooming_session_by_id_async(session_id: UUID) -> GroomingSession | None:
     return await grooming_session_service.get_grooming_session_by_id_async(session_id)
+
+
+# Users
+@app.post(f"{api_prefix}/users")
+async def create_user_async(user_data: CreateUserRequest) -> User | None:
+    return await user_service.create_user_async(user_data)

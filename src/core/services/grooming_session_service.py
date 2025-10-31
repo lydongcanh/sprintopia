@@ -5,8 +5,9 @@ from core.models.grooming_session import GroomingSession
 
 
 class GroomingSessionService:
-    def __init__(self, repository: GroomingSessionRepository) -> None:
+    def __init__(self, repository: GroomingSessionRepository, supabase: SupabaseFacade) -> None:
         self.repository = repository
+        self.supabase = supabase
 
     async def create_grooming_session_async(self, name: str) -> GroomingSession | None:
         session_id = uuid.uuid4()
@@ -16,8 +17,8 @@ class GroomingSessionService:
         if not session:
             return None
         
-        supabase = await SupabaseFacade.get_client_async()
-        supabase.channel(real_time_channel_name)
+        supabase_client = await self.supabase.get_client_async()
+        supabase_client.channel(real_time_channel_name)
 
         return GroomingSession(
             id=session.id,
