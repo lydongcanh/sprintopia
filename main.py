@@ -1,10 +1,8 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uuid import UUID
-import logging
 import sys
-import os
 from pathlib import Path
 
 # Add the src directory to the Python path
@@ -12,17 +10,11 @@ current_dir = Path(__file__).parent
 src_dir = current_dir / "src"
 sys.path.insert(0, str(src_dir))
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Load environment variables
 load_dotenv()
 
-# Create FastAPI app
 app = FastAPI(title="Sprintopia API", version="1.0.0")
 api_prefix = "/api/v1"
-SERVICE_UNAVAILABLE_MSG = "Service not available"
+SERVICE_UNAVAILABLE_MSG = "Service temporarily unavailable"
 
 # CORS
 origins = [
@@ -39,85 +31,50 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import models and services
-try:
-    from core.infrastructure.database.database_client import DatabaseClient
-    from core.infrastructure.supabase.supabase_facade import SupabaseFacade
-    from core.infrastructure.repositories.grooming_session_repository import GroomingSessionRepository
-    from core.infrastructure.repositories.user_repository import UserRepository
-    from core.models.grooming_session import GroomingSession, CreateGroomingSessionRequest
-    from core.models.user import User, CreateUserRequest
-    from core.services.grooming_session_service import GroomingSessionService
-    from core.services.user_service import UserService
-    
-    # Initialize services with error handling
-    db_client = DatabaseClient()
-    supabase_facade = SupabaseFacade()
-    grooming_session_repository = GroomingSessionRepository(db_client)
-    user_repository = UserRepository(db_client)
-    grooming_session_service = GroomingSessionService(grooming_session_repository, supabase_facade)
-    user_service = UserService(user_repository, supabase_facade)
-    logger.info("Services initialized successfully")
-    
-    # Set up the actual endpoints
-    # Sessions
-    @app.post(f"{api_prefix}/grooming-sessions")
-    async def create_grooming_session_async(session_data: CreateGroomingSessionRequest) -> GroomingSession | None:
-        return await grooming_session_service.create_grooming_session_async(session_data.name)
 
-    @app.get(f"{api_prefix}/grooming-sessions/{{session_id}}")
-    async def get_grooming_session_by_id_async(session_id: UUID) -> GroomingSession | None:
-        return await grooming_session_service.get_grooming_session_by_id_async(session_id)
-
-    @app.get(f"{api_prefix}/grooming-sessions")
-    async def get_active_grooming_sessions_async():
-        return await grooming_session_service.get_active_grooming_sessions_async()
-
-    @app.get(f"{api_prefix}/active-grooming-channels")
-    async def get_active_grooming_channels_async():
-        return await grooming_session_service.get_active_grooming_channels_async()
-
-    # Users
-    @app.post(f"{api_prefix}/users")
-    async def create_user_async(user_data: CreateUserRequest) -> User | None:
-        return await user_service.create_user_async(user_data)
-        
-except Exception as e:
-    logger.error(f"Error initializing services: {e}")
-    
-    # Fallback endpoints that return service unavailable
-    @app.post(f"{api_prefix}/grooming-sessions")
-    async def create_grooming_session_fallback():
-        raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MSG)
-
-    @app.get(f"{api_prefix}/grooming-sessions/{{session_id}}")
-    async def get_grooming_session_by_id_fallback(session_id: UUID):
-        raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MSG)
-
-    @app.get(f"{api_prefix}/grooming-sessions")
-    async def get_active_grooming_sessions_fallback():
-        raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MSG)
-
-    @app.get(f"{api_prefix}/active-grooming-channels")
-    async def get_active_grooming_channels_fallback():
-        raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MSG)
-
-    @app.post(f"{api_prefix}/users")
-    async def create_user_fallback():
-        raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MSG)
+from core.infrastructure.database.database_client import DatabaseClient
+from core.infrastructure.supabase.supabase_facade import SupabaseFacade
+from core.infrastructure.repositories.grooming_session_repository import GroomingSessionRepository
+from core.infrastructure.repositories.user_repository import UserRepository
+from core.models.grooming_session import GroomingSession, CreateGroomingSessionRequest
+from core.models.user import User, CreateUserRequest
+from core.services.grooming_session_service import GroomingSessionService
+from core.services.user_service import UserService
 
 
-# Root endpoint for testing
+# Initialize services
+db_client = DatabaseClient()
+supabase_facade = SupabaseFacade()
+grooming_session_repository = GroomingSessionRepository(db_client)
+user_repository = UserRepository(db_client)
+grooming_session_service = GroomingSessionService(grooming_session_repository, supabase_facade)
+user_service = UserService(user_repository, supabase_facade)
+
+
+# Sessions
+@app.post(f"{api_prefix}/grooming-sessions")
+async def create_grooming_session_async(session_data: CreateGroomingSessionRequest) -> GroomingSession | None:
+    return await grooming_session_service.create_grooming_session_async(session_data.name)
+
+@app.get(f"{api_prefix}/grooming-sessions/{{session_id}}")
+async def get_grooming_session_by_id_async(session_id: UUID) -> GroomingSession | None:
+    return await grooming_session_service.get_grooming_session_by_id_async(session_id)
+
+@app.get(f"{api_prefix}/grooming-sessions")
+async def get_active_grooming_sessions_async():
+    return await grooming_session_service.get_active_grooming_sessions_async()
+
+@app.get(f"{api_prefix}/active-grooming-channels")
+async def get_active_grooming_channels_async():
+    return await grooming_session_service.get_active_grooming_channels_async()
+
+# Users
+@app.post(f"{api_prefix}/users")
+async def create_user_async(user_data: CreateUserRequest) -> User | None:
+    return await user_service.create_user_async(user_data)
+
+
+# Root endpoint
 @app.get("/")
 async def root():
     return {"message": "Sprintopia API is running!", "status": "ok"}
-
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "version": "1.0.0"}
-
-# Test endpoint for API prefix
-@app.get(f"{api_prefix}/test")
-async def api_test():
-    return {"message": "API v1 is working!", "prefix": api_prefix}
