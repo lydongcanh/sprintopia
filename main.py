@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from uuid import UUID
 import sys
 from pathlib import Path
+import atexit
 
 # Add the src directory to the Python path
 current_dir = Path(__file__).parent
@@ -14,7 +15,6 @@ load_dotenv()
 
 app = FastAPI(title="Sprintopia API", version="1.0.0")
 api_prefix = "/api/v1"
-SERVICE_UNAVAILABLE_MSG = "Service temporarily unavailable"
 
 # CORS
 origins = [
@@ -31,6 +31,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register cleanup function for serverless environments
+def cleanup_database():
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if not loop.is_closed():
+            loop.run_until_complete(db_client.dispose_async())
+    except Exception:
+        pass  # Ignore cleanup errors
+
+atexit.register(cleanup_database)
+
+
+# Main logic
 
 from core.infrastructure.database.database_client import DatabaseClient
 from core.infrastructure.supabase.supabase_facade import SupabaseFacade
@@ -67,6 +81,7 @@ async def get_active_grooming_sessions_async():
 @app.get(f"{api_prefix}/active-grooming-channels")
 async def get_active_grooming_channels_async():
     return await grooming_session_service.get_active_grooming_channels_async()
+
 
 # Users
 @app.post(f"{api_prefix}/users")

@@ -1,6 +1,7 @@
 from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from core.utils.env import get_required_env
 
@@ -11,21 +12,25 @@ class DatabaseClient:
             database_url,
             echo=False,
             future=True,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
+            # Use NullPool for serverless - no connection pooling
+            poolclass=NullPool,
+            # Disable pool pre-ping since we're not pooling
+            pool_pre_ping=False,
         )
 
     async def execute_sql_async(self, sql: str, params: dict | None = None) -> list[dict]:
         async with self.engine.connect() as connection:
-            result = await connection.execute(text(sql), params or {})
-            await connection.commit()
             try:
-                rows = result.mappings().all()
-            except Exception:
-                rows = []
-            await connection.close()
-            return [dict(row) for row in rows]
+                result = await connection.execute(text(sql), params or {})
+                await connection.commit()
+                try:
+                    rows = result.mappings().all()
+                except Exception:
+                    rows = []
+                return [dict(row) for row in rows]
+            finally:
+                # Explicitly close the connection for serverless
+                await connection.close()
     
     async def execute_transaction_async(self, commands: list[tuple[str, dict[str, Any] | None]]) -> list[list[dict]]:
         """
@@ -38,15 +43,23 @@ class DatabaseClient:
             List of results for each command, where each result is a list of dictionaries
         """
         async with self.engine.connect() as connection:
-            async with connection.begin():
-                results = []
-                for sql, params in commands:
-                    result = await connection.execute(text(sql), params or {})
-                    try:
-                        rows = result.mappings().all()
-                        results.append([dict(row) for row in rows])
-                    except Exception:
-                        results.append([])
-            await connection.close()
-            return results
+            try:
+                async with connection.begin():
+                    results = []
+                    for sql, params in commands:
+                        result = await connection.execute(text(sql), params or {})
+                        try:
+                            rows = result.mappings().all()
+                            results.append([dict(row) for row in rows])
+                        except Exception:
+                            results.append([])
+                return results
+            finally:
+                # Explicitly close the connection for serverless
+                await connection.close()
+        
+    async def dispose_async(self):
+        """Dispose of the engine - useful for cleanup in serverless environments"""
+        if self.engine:
+            await self.engine.dispose()
         
