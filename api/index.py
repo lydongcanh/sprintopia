@@ -4,7 +4,8 @@ import os
 # Add the src directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+# Import the FastAPI app from your main module
 from src.service_host.main import app
 
-# Vercel will use this as the ASGI application
-# No need for a custom handler function with FastAPI
+# Vercel expects an 'app' variable for FastAPI applications
+# This is already imported from main.py, so we're good!
