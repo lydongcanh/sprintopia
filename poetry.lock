@@ -39,6 +39,7 @@ files = [
 [package.dependencies]
 idna = ">=2.8"
 sniffio = ">=1.1"
+typing_extensions = {version = ">=4.5", markers = "python_version < \"3.13\""}
 
 [package.extras]
 trio = ["trio (>=0.31.0)"]
@@ -1846,6 +1847,7 @@ files = [
 
 [package.dependencies]
 anyio = ">=3.6.2,<5"
+typing-extensions = {version = ">=4.10.0", markers = "python_version < \"3.13\""}
 
 [package.extras]
 full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.18)", "pyyaml"]
@@ -2441,5 +2443,5 @@ propcache = ">=0.2.1"
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.13"
-content-hash = "75ba7477ffb905f146a3da3a0c8363f2957a3ed4952b5c99f1f8abf8b99c3ad6"
+python-versions = ">=3.12"
+content-hash = "91183fec892bc28b5802252f8046003568833930154b0de8cb1dbfe5e1995ded"

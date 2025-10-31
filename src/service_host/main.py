@@ -24,9 +24,7 @@ api_prefix = "/api/v1"
 origins = [
     "http://localhost:5173",
     "https://localhost:5173",
-    "https://*.vercel.app",  # Allow all Vercel preview deployments
-    # Add your custom domain here when you set it up
-    # "https://your-domain.com",
+    "https://sprintopia.vercel.app",
 ]
 
 app.add_middleware(
