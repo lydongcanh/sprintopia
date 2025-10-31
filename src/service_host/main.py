@@ -38,7 +38,7 @@ supabase_facade = SupabaseFacade()
 grooming_session_repository = GroomingSessionRepository(db_client)
 user_repository = UserRepository(db_client)
 grooming_session_service = GroomingSessionService(grooming_session_repository, supabase_facade)
-user_service = UserService(user_repository)
+user_service = UserService(user_repository, supabase_facade)
 
 
 # Sessions
