@@ -43,6 +43,17 @@ grooming_session_service = GroomingSessionService(grooming_session_repository, s
 user_service = UserService(user_repository, supabase_facade)
 
 
+# Root endpoint for testing
+@app.get("/")
+async def root():
+    return {"message": "Sprintopia API is running!", "status": "ok"}
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "version": "1.0.0"}
+
+
 # Sessions
 @app.post(f"{api_prefix}/grooming-sessions")
 async def create_grooming_session_async(session_data: CreateGroomingSessionRequest) -> GroomingSession | None:
