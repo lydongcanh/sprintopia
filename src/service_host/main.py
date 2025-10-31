@@ -50,6 +50,14 @@ async def create_grooming_session_async(session_data: CreateGroomingSessionReque
 async def get_grooming_session_by_id_async(session_id: UUID) -> GroomingSession | None:
     return await grooming_session_service.get_grooming_session_by_id_async(session_id)
 
+@app.get(f"{api_prefix}/grooming-sessions")
+async def get_active_grooming_sessions_async():
+    return await grooming_session_service.get_active_grooming_sessions_async()
+
+@app.get(f"{api_prefix}/active-grooming-channels")
+async def get_active_grooming_channels_async():
+    return await grooming_session_service.get_active_grooming_channels_async()
+
 
 # Users
 @app.post(f"{api_prefix}/users")

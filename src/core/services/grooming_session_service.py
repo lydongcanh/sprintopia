@@ -31,3 +31,18 @@ class GroomingSessionService:
     
     async def get_grooming_session_by_id_async(self, session_id: uuid.UUID) -> GroomingSession | None:
         return await self.repository.get_grooming_session_by_id_async(session_id)
+    
+    async def get_active_grooming_sessions_async(self):
+        return await self.repository.get_active_grooming_sessions_async()
+    
+    async def get_active_grooming_channels_async(self):
+        try:
+            supabase_client = await self.supabase.get_client_async()
+            channels = supabase_client.get_channels()
+            return [{
+                "topic": channel.topic,
+                "state": channel.state,
+            } for channel in channels]
+        except Exception as e:
+            print(f"Error retrieving active grooming channels: {e}")
+            return {"error": str(e)}

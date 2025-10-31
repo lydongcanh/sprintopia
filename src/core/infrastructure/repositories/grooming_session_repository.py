@@ -28,3 +28,11 @@ class GroomingSessionRepository:
         params = {"id": id}
         result = await self.db_client.execute_sql_async(sql, params)
         return GroomingSession(**result[0]) if result else None
+
+    async def get_active_grooming_sessions_async(self):
+        sql = """
+            SELECT * FROM grooming_sessions
+            WHERE status = 'active';
+        """
+        result = await self.db_client.execute_sql_async(sql)
+        return [GroomingSession(**row) for row in result] if result else []
