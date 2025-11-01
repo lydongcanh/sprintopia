@@ -4,8 +4,8 @@ from core.models.user import CreateUserRequest, User
 
 
 class UserRepository:
-    def __init__(self, db: DatabaseClient):
-        self.db = db
+    def __init__(self, db_client: DatabaseClient):
+        self.db_client = db_client
 
 
     async def create_user_async(self, user: CreateUserRequest) -> User | None:
@@ -19,7 +19,7 @@ class UserRepository:
             "full_name": user.full_name,
             "external_auth_id": user.external_auth_id
         }
-        result = await self.db.execute_sql_async(query, params)
+        result = await self.db_client.execute_sql_async(query, params)
         return User(**result[0]) if result else None
     
 
@@ -33,7 +33,7 @@ class UserRepository:
             "estimation_turn_id": estimation_turn_id,
             "estimation_value": estimation_value
         }
-        await self.db.execute_sql_async(query, params)
+        await self.db_client.execute_sql_async(query, params)
 
 
     async def get_user_by_id_async(self, user_id: UUID) -> User | None:
@@ -43,5 +43,5 @@ class UserRepository:
             WHERE id = :user_id;
         """
         params = {"user_id": user_id}
-        result = await self.db.execute_sql_async(query, params)
+        result = await self.db_client.execute_sql_async(query, params)
         return User(**result[0]) if result else None

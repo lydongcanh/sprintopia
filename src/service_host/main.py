@@ -8,23 +8,30 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from core.infrastructure.database.database_client import DatabaseClient
-from core.infrastructure.supabase.supabase_facade import SupabaseFacade
-from core.infrastructure.repositories.grooming_session_repository import GroomingSessionRepository
-from core.infrastructure.repositories.estimation_turn_repository import EstimationTurnRepository
-from core.infrastructure.repositories.user_repository import UserRepository
-
+from core.container import Container
 from core.models.grooming_session import GroomingSession, CreateGroomingSessionRequest
 from core.models.user import User, CreateUserRequest
-
-from core.services.grooming_session_service import GroomingSessionService
-from core.services.user_service import UserService
 
 
 # Setup
 load_dotenv()
+
+# Initialize container
+container = Container()
+
 app = FastAPI(title="Sprintopia API", version="1.0.0")
 api_prefix = "/api/v1"
+
+# Startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Application startup - Database client initialized as singleton")
+
+@app.on_event("shutdown") 
+async def shutdown_event():
+    logger.info("Application shutdown - Disposing database connections")
+    db_client = container.database_client()
+    await db_client.dispose_async()
 
 # CORS
 origins = [
@@ -42,15 +49,6 @@ app.add_middleware(
 )
 
 
-db_client = DatabaseClient()
-supabase_facade = SupabaseFacade()
-grooming_session_repository = GroomingSessionRepository(db_client)
-user_repository = UserRepository(db_client)
-estimation_turn_repository = EstimationTurnRepository(db_client)
-grooming_session_service = GroomingSessionService(grooming_session_repository, estimation_turn_repository, user_repository, supabase_facade)
-user_service = UserService(user_repository, supabase_facade)
-
-
 # Utilities
 @app.get("/")
 async def root():
@@ -64,34 +62,41 @@ async def health_check():
 # Grooming Sessions
 @app.post(f"{api_prefix}/grooming-sessions/{{session_id}}/estimation-turns")
 async def start_new_estimation_turn_async(session_id: UUID):
+    grooming_session_service = container.grooming_session_service()
     await grooming_session_service.start_new_estimation_turn_async(session_id)
 
 @app.post(f"{api_prefix}/grooming-sessions/{{session_id}}/estimations")
 async def submit_estimation_async(
-        session_id: UUID, 
-        user_id: UUID = Body(..., embed=True), 
-        estimation_value: float = Body(..., embed=True)
-    ):
+    session_id: UUID, 
+    user_id: UUID = Body(..., embed=True), 
+    estimation_value: float = Body(..., embed=True)
+):
+    grooming_session_service = container.grooming_session_service()
     await grooming_session_service.submit_estimation_async(session_id, user_id, estimation_value)
 
 @app.post(f"{api_prefix}/grooming-sessions/{{session_id}}/estimation-turns/{{estimation_turn_id}}/end")
 async def end_estimation_turn_async(session_id: UUID, estimation_turn_id: UUID):
+    grooming_session_service = container.grooming_session_service()
     return await grooming_session_service.end_estimation_turn_async(session_id, estimation_turn_id)
 
 @app.post(f"{api_prefix}/grooming-sessions")
 async def create_grooming_session_async(session_data: CreateGroomingSessionRequest) -> GroomingSession | None:
+    grooming_session_service = container.grooming_session_service()
     return await grooming_session_service.create_grooming_session_async(session_data.name)
 
 @app.get(f"{api_prefix}/grooming-sessions/{{session_id}}")
 async def get_grooming_session_by_id_async(session_id: UUID) -> GroomingSession | None:
+    grooming_session_service = container.grooming_session_service()
     return await grooming_session_service.get_grooming_session_by_id_async(session_id)
 
 @app.get(f"{api_prefix}/grooming-sessions")
 async def get_active_grooming_sessions_async():
+    grooming_session_service = container.grooming_session_service()
     return await grooming_session_service.get_active_grooming_sessions_async()
 
 
 # Users
 @app.post(f"{api_prefix}/users")
 async def create_user_async(user_data: CreateUserRequest) -> User | None:
+    user_service = container.user_service()
     return await user_service.create_user_async(user_data)

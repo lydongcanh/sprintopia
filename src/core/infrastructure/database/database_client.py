@@ -10,11 +10,6 @@ class DatabaseClient:
             database_url,
             echo=False,
             future=True,
-            pool_pre_ping=True,
-            pool_size=15,
-            max_overflow=20,
-            pool_timeout=30,
-            pool_recycle=3600, # 1 hour
         )
 
     async def execute_sql_async(self, sql: str, params: dict | None = None) -> list[dict]:
