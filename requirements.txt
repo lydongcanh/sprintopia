@@ -6,3 +6,4 @@ asyncpg>=0.30.0,<0.31.0
 greenlet>=3.2.4,<4.0.0
 uvicorn[standard]
 dependency-injector==4.48.2
+PyJWT==2.10.1
