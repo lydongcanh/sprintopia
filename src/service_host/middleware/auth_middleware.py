@@ -7,7 +7,7 @@ import logging
 import os
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

@@ -24,42 +24,19 @@ class GroomingSessionService:
         return f"grooming_sessions:{session_id}"
     
 
-    async def start_new_estimation_turn_async(self, grooming_session_id: UUID):
+    async def start_new_estimation_turn_async(self, grooming_session_id: UUID) -> UUID:
         estimation_turn_id = await self.estimation_turn_repository.create_estimation_turn_async(grooming_session_id)
         if not estimation_turn_id:
             raise RuntimeError("Failed to create a new estimation turn.")
-
-        real_time_channel_name = self._build_real_time_channel_name(grooming_session_id)
-        supabase_client = await self.supabase.get_client_async()
-        channel = supabase_client.channel(real_time_channel_name)
-        await channel.subscribe()
-        await channel.send_broadcast(event="start_estimation_turn", data={"estimation_turn_id": str(estimation_turn_id)})
-
+        
+        return estimation_turn_id
 
     async def submit_estimation_async(self, session_id: UUID, user_id: UUID, estimation_value: float):
         await self.user_repository.create_user_estimation_turn_async(user_id, session_id, estimation_value)
 
-        real_time_channel_name = self._build_real_time_channel_name(session_id)
-        supabase_client = await self.supabase.get_client_async()
-        channel = supabase_client.channel(real_time_channel_name)
-        await channel.subscribe()
-        await channel.send_broadcast(
-            event="estimation_submitted", 
-            data={
-                "user_id": str(user_id),
-                "estimation_value": estimation_value
-            }
-        )
 
-
-    async def end_estimation_turn_async(self, grooming_session_id: UUID, estimation_turn_id: UUID):
+    async def end_estimation_turn_async(self, estimation_turn_id: UUID):
         await self.estimation_turn_repository.complete_estimation_turn_async(estimation_turn_id)
-
-        real_time_channel_name = self._build_real_time_channel_name(grooming_session_id)
-        supabase_client = await self.supabase.get_client_async()
-        channel = supabase_client.channel(real_time_channel_name)
-        await channel.subscribe()
-        await channel.send_broadcast(event="end_estimation_turn", data={"estimation_turn_id": str(estimation_turn_id)})
 
 
     async def create_grooming_session_async(self, name: str) -> GroomingSession | None:
@@ -70,9 +47,6 @@ class GroomingSessionService:
         if not session:
             return None
         
-        supabase_client = await self.supabase.get_client_async()
-        supabase_client.channel(real_time_channel_name)
-
         return GroomingSession(
             id=session.id,
             created_at=session.created_at,
