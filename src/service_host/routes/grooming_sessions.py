@@ -40,6 +40,13 @@ async def create_grooming_session_async(session_data: CreateGroomingSessionReque
     return await grooming_session_service.create_grooming_session_async(session_data.name)
 
 
+@router.patch("/{session_id}")
+async def rename_grooming_session_async(session_id: UUID, request: Request, new_name: str = Body(..., embed=True)):
+    container: Container = request.app.state.container
+    grooming_session_service: GroomingSessionService = container.grooming_session_service()
+    await grooming_session_service.rename_grooming_session_async(session_id, new_name)
+
+
 @router.get("/{session_id}", response_model=GroomingSession | None)
 async def get_grooming_session_by_id_async(session_id: UUID, request: Request):
     container: Container = request.app.state.container

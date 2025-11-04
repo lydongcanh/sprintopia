@@ -20,6 +20,20 @@ class GroomingSessionRepository:
         result = await self.db_client.execute_sql_async(sql, params)
         return GroomingSession(**result[0]) if result else None
     
+    
+    async def rename_grooming_session_async(self, id: UUID, name: str):
+        sql = """
+            UPDATE grooming_sessions
+            SET name = :name
+            WHERE id = :id;
+        """
+        params = {
+            "id": id,
+            "name": name,
+        }
+        await self.db_client.execute_sql_async(sql, params)
+
+
     async def get_grooming_session_by_id_async(self, id: UUID) -> GroomingSession | None:
         sql = """
             SELECT * FROM grooming_sessions

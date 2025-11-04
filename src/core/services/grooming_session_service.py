@@ -57,6 +57,10 @@ class GroomingSessionService:
         )
     
 
+    async def rename_grooming_session_async(self, session_id: UUID, new_name: str):
+        await self.grooming_session_repository.rename_grooming_session_async(session_id, new_name)
+
+
     async def get_grooming_session_by_id_async(self, session_id: UUID) -> GroomingSession | None:
         return await self.grooming_session_repository.get_grooming_session_by_id_async(session_id)
     
